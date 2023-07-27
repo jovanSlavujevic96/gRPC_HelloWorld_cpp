@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+package test;
+
+message State {
+    bool on = 1;
+}
+
+service Bidirectional {
+    // bidirectional communication
+    rpc Hold(stream google.protobuf.Empty) returns (stream State) {}
+}

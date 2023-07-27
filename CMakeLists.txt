@@ -27,58 +27,63 @@ else()
     set(_GRPC_CPP_PLUGIN_EXECUTABLE $<TARGET_FILE:gRPC::grpc_cpp_plugin>)
 endif()
 
-set(COMPONENT "sample")
+list(APPEND MODULES "oneway" "bidirectional")
 
-get_filename_component(PROTO "${CMAKE_CURRENT_SOURCE_DIR}/protos/${COMPONENT}.proto" ABSOLUTE)
-get_filename_component(PROTO_PATH "${PROTO}" PATH)
+foreach(MODULE IN LISTS MODULES)
+    message(STATUS "module = ${MODULE}")
 
-set(PROTO_SOURCES "${CMAKE_CURRENT_BINARY_DIR}/${COMPONENT}.pb.cc")
-set(PROTO_HEADERS "${CMAKE_CURRENT_BINARY_DIR}/${COMPONENT}.pb.h")
-set(GRPC_SOURCES "${CMAKE_CURRENT_BINARY_DIR}/${COMPONENT}.grpc.pb.cc")
-set(GRPC_HEADERS "${CMAKE_CURRENT_BINARY_DIR}/${COMPONENT}.grpc.pb.h")
+    get_filename_component(PROTO "${CMAKE_CURRENT_SOURCE_DIR}/protos/${MODULE}.proto" ABSOLUTE)
+    get_filename_component(PROTO_PATH "${PROTO}" PATH)
 
-add_custom_command(
-    OUTPUT "${PROTO_SOURCES}" "${PROTO_HEADERS}" "${GRPC_SOURCES}" "${GRPC_HEADERS}"
-    COMMAND ${_PROTOBUF_PROTOC}
-    ARGS --grpc_out "${CMAKE_CURRENT_BINARY_DIR}" --cpp_out "${CMAKE_CURRENT_BINARY_DIR}"
-    -I "${PROTO_PATH}"
-    --plugin=protoc-gen-grpc="${_GRPC_CPP_PLUGIN_EXECUTABLE}"
-    "${PROTO}"
-    DEPENDS "${PROTO}"
-)
+    set(PROTO_SOURCES "${CMAKE_CURRENT_BINARY_DIR}/${MODULE}.pb.cc")
+    set(PROTO_HEADERS "${CMAKE_CURRENT_BINARY_DIR}/${MODULE}.pb.h")
+    set(GRPC_SOURCES "${CMAKE_CURRENT_BINARY_DIR}/${MODULE}.grpc.pb.cc")
+    set(GRPC_HEADERS "${CMAKE_CURRENT_BINARY_DIR}/${MODULE}.grpc.pb.h")
 
-include_directories("${CMAKE_CURRENT_BINARY_DIR}")
+    add_custom_command(
+        OUTPUT "${PROTO_SOURCES}" "${PROTO_HEADERS}" "${GRPC_SOURCES}" "${GRPC_HEADERS}"
+        COMMAND ${_PROTOBUF_PROTOC}
+        ARGS --grpc_out "${CMAKE_CURRENT_BINARY_DIR}" --cpp_out "${CMAKE_CURRENT_BINARY_DIR}"
+        -I "${PROTO_PATH}"
+        --plugin=protoc-gen-grpc="${_GRPC_CPP_PLUGIN_EXECUTABLE}"
+        "${PROTO}"
+        DEPENDS "${PROTO}"
+    )
 
-#######################################################################
+    include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 
-add_library(${COMPONENT}_grpc_proto
-    ${PROTO_SOURCES}
-    ${PROTO_HEADERS}
-    ${GRPC_SOURCES}
-    ${GRPC_HEADERS}
-)
+    #######################################################################
 
-target_link_libraries(${COMPONENT}_grpc_proto
-    PUBLIC
-    ${_PROTOBUF_LIBPROTOBUF}
-    ${_REFLECTION}
-    ${_GRPC_GRPCPP}
-)
+    add_library(${MODULE}_grpc_proto
+        ${PROTO_SOURCES}
+        ${PROTO_HEADERS}
+        ${GRPC_SOURCES}
+        ${GRPC_HEADERS}
+    )
 
-#######################################################################
+    target_link_libraries(${MODULE}_grpc_proto
+        PUBLIC
+        ${_PROTOBUF_LIBPROTOBUF}
+        ${_REFLECTION}
+        ${_GRPC_GRPCPP}
+    )
 
-add_executable(client
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/client.cc
-)
-target_link_libraries(client
-    ${COMPONENT}_grpc_proto
-)
+    ######################## CLIENT SIDE ###################################
 
-#######################################################################
+    add_executable(${MODULE}_client
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/${MODULE}_client.cc
+    )
+    target_link_libraries(${MODULE}_client
+        ${MODULE}_grpc_proto
+    )
 
-add_executable(server
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/server.cc
-)
-target_link_libraries(server
-    ${COMPONENT}_grpc_proto
-)
+    ######################## SERVER SIDE ####################################
+
+    add_executable(${MODULE}_server
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/${MODULE}_server.cc
+    )
+    target_link_libraries(${MODULE}_server
+        ${MODULE}_grpc_proto
+    )
+
+endforeach()

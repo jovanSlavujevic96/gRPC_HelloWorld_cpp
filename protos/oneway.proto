@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package test;
+
+service OneWay {
+    rpc Greet (Request) returns (Response) {}
+}
+
+message Request {
+    string word = 1;
+}
+
+message Response {
+    string word = 1;
+}
