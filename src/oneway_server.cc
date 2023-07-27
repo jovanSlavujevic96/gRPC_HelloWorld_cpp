@@ -14,21 +14,6 @@ class Service final : public test::OneWay::Service
     }
 };
 
-void RunServer() {
-    std::string server_address{"localhost:2510"};
-    Service service;
-
-    // Build server
-    grpc::ServerBuilder builder;
-    builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-    builder.RegisterService(&service);
-    std::unique_ptr<grpc::Server> server{builder.BuildAndStart()};
-
-    // Run server
-    std::cout << "Server listening on " << server_address << std::endl;
-    server->Wait();
-}
-
 int main(int argc, char** argv)
 {
     std::string server_address{"localhost:2510"};
@@ -40,7 +25,7 @@ int main(int argc, char** argv)
     builder.RegisterService(&service);
 
     // Run server
-    std::unique_ptr<grpc::Server> server{builder.BuildAndStart()};
+    std::shared_ptr<grpc::Server> server{builder.BuildAndStart()};
 
     std::cout << "Server listening on " << server_address << std::endl;
     std::cout << "Press [ENTER] to exit the server app" << std::endl;

@@ -9,16 +9,22 @@
 class Client final
 {
 private:
+    std::string address_;
     std::unique_ptr<test::OneWay::Stub> stub_;
 
 public:
-    Client(std::shared_ptr<grpc::Channel> channel) : stub_{test::OneWay::NewStub(channel)} {}
+    Client(std::string server_address) : address_{server_address} {}
 
     std::string Greet(const std::string& request_sample_field);
 };
 
 std::string Client::Greet(const std::string& request_sample_field)
 {
+    // attempt connection
+    std::shared_ptr<grpc::ChannelCredentials> channel_creds = ::grpc::InsecureChannelCredentials();
+    std::shared_ptr<grpc::Channel> channel = ::grpc::CreateChannel(address_, channel_creds);
+    stub_ = test::OneWay::NewStub(channel);
+
     // Prepare request
     test::Request request;
     request.set_word(request_sample_field);
@@ -43,10 +49,7 @@ std::string Client::Greet(const std::string& request_sample_field)
 
 int main(int argc, char** argv)
 {
-    std::string server_address{"localhost:2510"};
-    std::shared_ptr<grpc::Channel> channel = grpc::CreateChannel(server_address, grpc::InsecureChannelCredentials());
-
-    Client client{channel};
+    Client client{"localhost:2510"};
 
     std::string request_sample_field{"world"};
     std::string response_sample_field = client.Greet(request_sample_field);

@@ -91,7 +91,7 @@ int main()
     builder.AddListeningPort("0.0.0.0:4323", grpc::InsecureServerCredentials());
     service.StartService(builder);
 
-    std::unique_ptr<grpc::Server> server_ = builder.BuildAndStart();
+    std::shared_ptr<grpc::Server> server_ = builder.BuildAndStart();
     std::cout << "Server listening on " << "0.0.0.0:4323" << std::endl;
 
     char input;
